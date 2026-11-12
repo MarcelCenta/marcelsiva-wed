@@ -1,0 +1,45 @@
+name: Code Analysis and Deploy
+
+on:
+  push:
+    branches:
+      - "main"
+      - "master"
+      - "4.x"
+
+jobs:
+  analyze-code:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install npm
+        run: npm install -g npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run ESLint (JavaScript)
+        run: npx eslint "js/**/*.js"
+
+      - name: Run stylelint (CSS)
+        run: npx stylelint "css/**/*.css"
+
+      - name: Run HTMLHint (HTML)
+        run: npx htmlhint "**/*.html"
+
+      - name: Run check circular dependency
+        run: npx madge --circular js
+
+      - name: Build frontend
+        run: npm run build
+

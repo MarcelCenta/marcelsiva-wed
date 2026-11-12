@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font:14px Arial,sans-serif;max-width:1100px;margin:24px auto;padding:0 16px;color:#222}h1,h2{margin-bottom:12px}input,button{padding:9px;margin:4px 4px 4px 0}input{max-width:100%;box-sizing:border-box}button{cursor:pointer}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{border:1px solid #ddd;padding:8px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#f4f4f4}.hidden{display:none}.muted{color:#666}.status{padding:8px 0;color:#8a3}
+  </style>
+</head>
+<body>
+  <h1>Wedding invitation admin</h1>
+  <section id="login">
+    <p>Log in with the ADMIN_PASSWORD configured in Apps Script Project Settings.</p>
+    <input type="password" id="password" placeholder="Admin password" autocomplete="current-password">
+    <button onclick="login()">Log in</button><div id="loginStatus" class="status"></div>
+  </section>
+  <section id="app" class="hidden">
+    <h2>Guest list</h2>
+    <form id="guestForm" onsubmit="addGuest(event)">
+      <input id="guestName" required minlength="2" maxlength="100" placeholder="Guest name">
+      <input id="guestPhone" maxlength="40" placeholder="Phone (optional)">
+      <button type="submit">Add guest</button>
+    </form>
+    <p class="muted">Enter your published invitation website URL below to generate each guest's personal link.</p>
+    <input id="siteUrl" style="width: min(600px, 100%)" placeholder="https://your-site.example/">
+    <button onclick="refresh()">Refresh</button>
+    <div id="status" class="status"></div>
+    <div id="guestTable"></div>
+    <h2>RSVP responses</h2><div id="rsvpTable"></div>
+  </section>
+<script>
+  var adminToken = '';
+  function login() {
+    document.getElementById('loginStatus').textContent = 'Checking...';
+    google.script.run.withSuccessHandler(function (res) {
+      if (!res || !res.ok) { document.getElementById('loginStatus').textContent = (res && res.message) || 'Login failed.'; return; }
+      adminToken = res.token;
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      refresh();
+    }).withFailureHandler(showError).adminLogin(document.getElementById('password').value);
+  }
+  function refresh() {
+    document.getElementById('status').textContent = 'Loading...';
+    google.script.run.withSuccessHandler(renderData).withFailureHandler(showError).adminGetData(adminToken);
+  }
+  function addGuest(event) {
+    event.preventDefault();
+    google.script.run.withSuccessHandler(function () {
+      document.getElementById('guestForm').reset();
+      document.getElementById('status').textContent = 'Guest added.';
+      refresh();
+    }).withFailureHandler(showError).adminAddGuest(adminToken, document.getElementById('guestName').value, document.getElementById('guestPhone').value);
+  }
+  function setInvited(id, value) {
+    google.script.run.withSuccessHandler(refresh).withFailureHandler(showError).adminSetInvited(adminToken, id, value);
+  }
+  function renderData(data) {
+    document.getElementById('status').textContent = 'Loaded ' + data.guests.length + ' guests and ' + data.rsvps.length + ' RSVP records.';
+    var site = document.getElementById('siteUrl').value.trim();
+    var guestHtml = '<table><thead><tr><th>Name</th><th>Phone</th><th>Invited</th><th>Invitation link</th></tr></thead><tbody>';
+    data.guests.forEach(function (g) {
+      var link = '';
+      if (site) {
+        var base = site.split('?')[0];
+        link = base + '?gid=' + encodeURIComponent(g['Guest ID']) + '&to=' + encodeURIComponent(g.Name);
+      }
+      guestHtml += '<tr><td>' + esc(g.Name) + '</td><td>' + esc(g.Phone || '') + '</td><td>' + esc(g.Invited) + ' <button onclick="setInvited(\'' + escAttr(g['Guest ID']) + '\',' + (g.Invited !== 'Yes') + ')">' + (g.Invited === 'Yes' ? 'Mark not sent' : 'Mark sent') + '</button></td><td>' + (link ? '<a target="_blank" rel="noopener" href="' + escAttr(link) + '">Open invitation</a> <button onclick="copyLink(\'' + escAttr(link) + '\')">Copy link</button>' : '<span class="muted">Enter site URL above</span>') + '</td></tr>';
+    });
+    document.getElementById('guestTable').innerHTML = guestHtml + '</tbody></table>';
+    var rsvpHtml = '<table><thead><tr><th>Guest</th><th>Attendance</th><th>Wishes</th><th>Submitted</th></tr></thead><tbody>';
+    data.rsvps.slice().reverse().forEach(function (r) { rsvpHtml += '<tr><td>' + esc(r['Guest Name']) + '</td><td>' + esc(r.Attendance) + '</td><td>' + esc(r.Wishes || '') + '</td><td>' + esc(r['Submitted At']) + '</td></tr>'; });
+    document.getElementById('rsvpTable').innerHTML = rsvpHtml + '</tbody></table>';
+  }
+  function copyLink(link) { navigator.clipboard.writeText(link).then(function(){ document.getElementById('status').textContent='Invitation link copied.'; }).catch(function(){ window.prompt('Copy invitation link:', link); }); }
+  function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function escAttr(value) { return esc(value); }
+  function showError(err) { document.getElementById('status').textContent = (err && err.message) || String(err); document.getElementById('loginStatus').textContent = (err && err.message) || String(err); }
+</script>
+</body>
+</html>
