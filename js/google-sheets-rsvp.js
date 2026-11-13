@@ -24,9 +24,25 @@
 
         if (nameInput && guestName) nameInput.value = guestName;
 
-        if (guestNum == "1") jumlahInput.disabled = true;
+        // if (guestNum == "1") jumlahInput.disabled = true;
 
-        if (jumlahInput && guestNum) jumlahInput.value = guestNum;
+        // if (jumlahInput && guestNum) jumlahInput.value = guestNum;
+
+        jumlahInput.innerHTML = "";
+
+        for (var i = 1; i <= guestNum; i++) {
+            var option = document.createElement("option");
+            option.value = i;
+            option.text = i;
+
+            if (i == guestNum) {
+                option.selected = true;
+            }
+
+            jumlahInput.appendChild(option);
+        }
+
+        jumlahInput.disabled = guestNum <= 1;
 
         if (!guestId) {
             if (status) status.textContent = 'Tautan undangan ini belum memiliki ID tamu. Silakan gunakan tautan dari admin.';
