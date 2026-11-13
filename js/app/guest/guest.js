@@ -311,7 +311,7 @@ export const guest = (() => {
         const url = new URL('https://calendar.google.com/calendar/render');
         const data = new URLSearchParams({
             action: 'TEMPLATE',
-            text: 'The Wedding of Wahyu and Riski',
+            text: 'The Wedding of Marcel and Siva',
             dates: `${formatDate('2026-12-27 15:00')}/${formatDate('2026-12-27 16:30')}`,
             details: 'Tanpa mengurangi rasa hormat, kami mengundang Anda untuk berkenan menghadiri acara pernikahan kami. Terima kasih atas perhatian dan doa restu Anda, yang menjadi kebahagiaan serta kehormatan besar bagi kami.',
             location: 'Cafe dan Restoran Halallicious, Jl. Dokter Sucipto No.19, Beru, Kec. Wlingi, Kabupaten Blitar, Jawa Timur 66184.',

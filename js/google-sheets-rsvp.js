@@ -26,6 +26,8 @@
 
         if (jumlahInput && guestNum) jumlahInput.value = guestNum;
 
+        if (guestNum == "1") document.getElementById('rsvp-orang').disabled = true;
+
         if (!guestId) {
             if (status) status.textContent = 'Tautan undangan ini belum memiliki ID tamu. Silakan gunakan tautan dari admin.';
             if (button) button.disabled = true;
